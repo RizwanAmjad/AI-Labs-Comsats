@@ -1,10 +1,8 @@
-
 class Priority_Queue:
 
-    def __init__(self, reverse_priority=False):
+    def __init__(self):
         self.back = list()
         self.count = 0
-        self.reverse_priority = reverse_priority
 
     def enqueue(self, value):
         self.back.append(value)
@@ -13,10 +11,13 @@ class Priority_Queue:
     def dequeue(self):
         if self.count > 0:
             self.count -= 1
-            if self.reverse_priority:
-                return self.back.remove(max(self.back))
-            else:
-                return self.back.remove(min(self.back))
+            min_index = 0
+            min_value = 0
+            for i in range(len(self.back)):
+                if min_value > self.back[i].f:
+                    min_value = self.back[i].f
+                    min_index = i
+            return self.back.pop(min_index)
         else:
             return None
 
@@ -28,6 +29,8 @@ class Priority_Queue:
 
     def to_string(self):
         return str(self.back)
+
+
 # Priority Queue ends here
 
 class Problem(object):
@@ -120,15 +123,17 @@ class Problem(object):
 # ______________________________________________________________________________
 class Node:
 
-    def __init__(self, state, parent=None, action=None, path_cost=0):
+    def __init__(self, state, parent=None, action=None, path_cost=0, heuristic=0):
         """Create a search tree Node, derived from a parent by an action."""
         self.state = state
         self.parent = parent
         self.action = action
         self.path_cost = path_cost
+        self.h = heuristic
+        self.f = self.h
 
     def __repr__(self):
-        return "<Node {} {}>".format(self.state, self.path_cost)
+        return "<Node {} {} {}>".format(self.state, self.path_cost, self.f)
 
     def __lt__(self, node):
         return isinstance(node, Node) and self.state < node.state
@@ -139,11 +144,49 @@ class Node:
 
 # -----------------------------------------------------------------------------
 
+def child_node(problem, parent, action):
+    next_state = problem.Result(parent.state, action)
+    step_cost = problem.Path_cost(parent.state, action)
+    heuristic_cost = problem.h(next_state)
+    next_node = Node(next_state, parent, action, parent.path_cost + int(step_cost), heuristic_cost)
+    return next_node
+
+
 # Problem ends here
+def solution(node):
+    path_back = []
+    while node and type(node) == Node:
+        path_back.append(node)
+        node = node.parent
+    for n in reversed(path_back):
+        print(n)
 
 
+# ______________________________________________________________________________
+
+def GBFS(problem):
+    heuristic_cost = problem.h(problem.initial_state)
+    node = Node(problem.initial_state, heuristic_cost)
+    if problem.Goal_test(node.state): return solution(node)
+    frontier = Priority_Queue()
+    frontier.enqueue(node)
+    explored = []
+    while True:
+        if not frontier: return print('Failure')
+        node = frontier.dequeue()
+        explored.append(node.state)
+        for action in problem.Actions(node.state):
+            child = child_node(problem, node, action)
+            if child.state not in explored and child not in frontier.back:
+                if problem.Goal_test(child.state):  return solution(child)
+                frontier.enqueue(child)
+            # End of if
+        # End of for
+    # End of while
 
 
-q = Priority_Queue()
-q.enqueue(12)
-print(q.contains(1))
+# ____________________________________________________________________________
+
+
+p = Problem('Lugoj', 'Bucharest')
+GBFS(p)
