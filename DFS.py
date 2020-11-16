@@ -123,5 +123,5 @@ def DFS(problem):
 
 # ____________________________________________________________________________
 # Program main part
-p = Problem('Lugoj', 'Bucharest')
+p = Problem('Arad', 'Bucharest')
 DFS(p)

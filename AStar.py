@@ -1,33 +1,74 @@
-class Priority_Queue:
+# Rizwan Amjad
+# FA18-BSE-031
+# class Priority_Queue:
+#
+#     def __init__(self):
+#         self.back = list()
+#         self.count = 0
+#
+#     def enqueue(self, value):
+#         self.back.append(value)
+#         self.count += 1
+#
+#     def dequeue(self):
+#         if self.count > 0:
+#             self.count -= 1
+#             min_index = 0
+#             for i in range(len(self.back)):
+#                 if self.back[min_index].f > self.back[i].f:
+#                     min_index = i
+#             return self.back.pop(min_index)
+#         else:
+#             return None
+#
+#     def contains(self, value):
+#         for val in self.back:
+#             if val == value:
+#                 return True
+#         return False
+#
+#     def to_string(self):
+#         return str(self.back)
+#
 
+class PriorityQueue:
     def __init__(self):
-        self.back = list()
-        self.count = 0
+        self.fn = {}
+        self.nodes = {}
 
-    def enqueue(self, value):
-        self.back.append(value)
-        self.count += 1
+    def append(self, node):
+        problem = Problem('Arad', 'Bucharest')
+        if node.state not in self.fn.keys():
+            self.fn[node.state] = int(problem.h(node.state)) + node.path_cost
+            self.nodes[node.state] = node
 
-    def dequeue(self):
-        if self.count > 0:
-            self.count -= 1
-            min_index = 0
-            for i in range(len(self.back)):
-                if self.back[min_index].f > self.back[i].f:
-                    min_index = i
-            return self.back.pop(min_index)
-        else:
-            return None
+    def pop(self):
+        # Find state with minmum f-value
+        state = min(self.fn, key=self.fn.get)
+        del self.fn[state]
+        node = self.nodes[state]
+        del self.nodes[state]
+        return node
 
-    def contains(self, value):
-        for val in self.back:
-            if val == value:
-                return True
-        return False
+    def replace(self, child):
+        problem = Problem('Arad', 'Bucharest')
+        if self.contains(child) and self.fn[child.state] > int(problem.h(child.state)) + child.path_cost:
+            self.fn[child.state] = int(problem.h(child.state)) + child.path_cost
+            self.nodes[child.state] = child
 
-    def to_string(self):
-        return str(self.back)
+    def IsEmpty(self):
+        return not self.fn
 
+    def Clear(self):
+        self.fn = {}
+        self.nodes = {}
+
+    def contains(self, node):
+        return node.state in self.fn.keys()
+
+    def __str__(self):
+        str1 = ' '.join(str(e) for e in self.fn.keys())
+        return str1
 
 # Priority Queue ends here
 
@@ -43,7 +84,8 @@ class Problem(object):
         self.state_space['Lugoj'] = {'R1': 'Timisoara', 'R2': 'Mehandia'};
         self.state_space['Drobeta'] = {'R1': 'Mehandia', 'R2': 'Craiova'};
         self.state_space['Craiova'] = {'R1': 'Drobeta', 'R2': 'Rimnicu Vilcea', 'R3': 'Pitesti'};
-        self.state_space['Rimnicu Vilcea'] = {'R1': 'Sibiu', 'R2': 'Pitesti', 'R3': 'Craiova'};
+        # self.state_space['Rimnicu Vilcea'] = {'R1': 'Sibiu', 'R2': 'Pitesti', 'R3': 'Craiova'};
+        self.state_space['Rimnicu Vilcea'] = {'R1': 'Sibiu', 'R3': 'Pitesti', 'R4': 'Craiova'};
         self.state_space['Sibiu'] = {'R1': 'Arad', 'R2': 'Fagaras', 'R3': 'Oradea', 'R4': 'Rimnicu Vilcea'};
         self.state_space['Fagaras'] = {'R1': 'Sibiu', 'R2': 'Bucharest'};
         self.state_space['Pitesti'] = {'R1': 'Rimnicu Vilcea', 'R2': 'Craiova', 'R3': 'Bucharest'};
@@ -112,13 +154,18 @@ class Problem(object):
         return state == self.goal_state
 
     def Path_cost(self, state, action):
+        # print(state, action)
         return self.step_cost[state][action]
 
     def h(self, state):
         return self.heuristic[state]
+    # change here
+    def f(self, state):
+        return self.heuristic[state] + self.step_cost[state]
 
 
 # ______________________________________________________________________________
+
 class Node:
 
     def __init__(self, state, parent=None, action=None, path_cost=0, heuristic=0):
@@ -128,7 +175,7 @@ class Node:
         self.action = action
         self.path_cost = path_cost
         self.h = heuristic
-        self.f = self.h
+        self.f = self.h + self.path_cost # change here
 
     def __repr__(self):
         return "<Node {} {} {}>".format(self.state, self.path_cost, self.f)
@@ -158,26 +205,30 @@ def solution(node):
         node = node.parent
     for n in reversed(path_back):
         print(n)
-
+        pass
 
 # ______________________________________________________________________________
 
-def GBFS(problem):
+def AStar(problem):
     heuristic_cost = problem.h(problem.initial_state)
     node = Node(problem.initial_state, heuristic=heuristic_cost)
     if problem.Goal_test(node.state): return solution(node)
-    frontier = Priority_Queue()
-    frontier.enqueue(node)
+    frontier = PriorityQueue()
+    frontier.append(node)
     explored = []
     while True:
-        if not frontier.back: return print('Failure')
-        node = frontier.dequeue()
+        if frontier.IsEmpty(): return print('Failure')
+        node = frontier.pop()
+        # print(node)
         explored.append(node.state)
+        if problem.Goal_test(node.state):  return solution(child)
+
         for action in problem.Actions(node.state):
             child = child_node(problem, node, action)
-            if child.state not in explored and child not in frontier.back:
-                if problem.Goal_test(child.state):  return solution(child)
-                frontier.enqueue(child)
+            if child.state not in explored and child not in frontier.nodes.values():
+                frontier.append(child)
+            elif frontier.contains(child):
+                frontier.replace(child)
             # End of if
         # End of for
     # End of while
@@ -187,4 +238,4 @@ def GBFS(problem):
 
 
 p = Problem('Arad', 'Bucharest')
-GBFS(p)
+AStar(p)
